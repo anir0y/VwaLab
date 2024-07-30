@@ -1,5 +1,6 @@
 Status:
 
+[![Docker Image CI](https://github.com/anir0y/VwaLab/actions/workflows/docker-image.yml/badge.svg)](https://github.com/anir0y/VwaLab/actions/workflows/docker-image.yml)
 
 # VWA Lab for Classroom Training
 
