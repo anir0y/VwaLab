@@ -1,50 +1,30 @@
 FROM debian:latest
 
 LABEL maintainer="mail@anir0y.in"
-LABEL Version="E.1.3"
+LABEL version="E.1.3"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install necessary packages
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y wget debconf-utils && \
+    apt-get install -y wget debconf-utils apache2 mariadb-server php php-mysql php-pgsql php-pear php-gd && \
     echo "mariadb-server mariadb-server/root_password password vulnerables" | debconf-set-selections && \
     echo "mariadb-server mariadb-server/root_password_again password vulnerables" | debconf-set-selections && \
-    apt-get install -y \
-    apache2 \
-    mariadb-server \
-    php \
-    php-mysql \
-    php-pgsql \
-    php-pear \
-    php-gd && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy application files
+
 COPY vwa /var/www/html
 COPY db.sql /docker-entrypoint-initdb.d/db.sql
 
-# Initialize MySQL database
-RUN mkdir -p /var/run/mysqld && \
-    chown -R mysql:mysql /var/run/mysqld && \
-    mysqld_safe --skip-networking & \
-    sleep 5 && \
-    mysql -uroot -pvulnerables -e "CREATE USER 'app'@'localhost' IDENTIFIED BY 'vulnerables'; CREATE DATABASE vwa; GRANT ALL PRIVILEGES ON vwa.* TO 'app'@'localhost';" && \
-    mysqladmin -uroot -pvulnerables shutdown
-
-# Expose port 80
-EXPOSE 80
-
-# Copy the main script
-RUN echo "IyEvYmluL2Jhc2gKCmVjaG8gIlJ1bm5pbmcgbWFpbi5zaCIKY2htb2QgNzc3IC1SIC92YXIvd3d3L2h0bWwvaW1hZ2VzIApjaG93biB3d3ctZGF0YTp3d3ctZGF0YSAtUiAvdmFyL3d3dy9odG1sIApybSAvdmFyL3d3dy9odG1sL2luZGV4Lmh0bWwKCgpjaG93biAtUiBteXNxbDpteXNxbCAvdmFyL2xpYi9teXNxbCAvdmFyL3J1bi9teXNxbGQKZWNobyAnWytdIFN0YXJ0aW5nIG15c3FsLi4uJwpzZXJ2aWNlIG15c3FsIHN0YXJ0CnNsZWVwIDMKbXlzcWwgLXUgcm9vdCA8IC9kb2NrZXItZW50cnlwb2ludC1pbml0ZGIuZC9kYi5zcWwKCmVjaG8gJ1srXSBTdGFydGluZyBhcGFjaGUnCnNlcnZpY2UgYXBhY2hlMiBzdGFydAoKCndoaWxlIHRydWUKZG8KICAgIHRhaWwgLWYgL3Zhci9sb2cvYXBhY2hlMi8qLmxvZwogICAgZXhpdCAwCmRvbmUKCiMgTGVhZGtpbmcgdG9rZW46IDJNd2hkWWlsOEw0NUE3RXg0U21PRFFTeFROVF8zNXBzY1dLcXc5YmZ5UDRIcVRVVmQgIHwgdGhpcyBpcyB0aGUgZmxhZyB0b2tlbiAK" | base64 -d > /main.sh
+# Copy main.sh
+RUN echo "IyEvYmluL2Jhc2gKZWNobyAiUnVubmluZyBtYWluLnNoIgojIENyZWF0ZSBuZWNlc3NhcnkgZGlyZWN0b3JpZXMKbWtkaXIgLXAgL3Zhci93d3cvaHRtbC9pbWFnZXMKcm0gLXJmIC92YXIvd3d3L2h0bWwvaW5kZXguaHRtbAojIFNldCBwZXJtaXNzaW9ucwpjaG1vZCA3NzcgLVIgL3Zhci93d3cvaHRtbC9pbWFnZXMKY2hvd24gd3d3LWRhdGE6d3d3LWRhdGEgLVIgL3Zhci93d3cvaHRtbAojIFN0YXJ0IE15U1FMCmVjaG8gJ1srXSBTdGFydGluZyBteXNxbC4uLicKbXlzcWxkX3NhZmUgJgpzbGVlcCA1CiMgSW5pdGlhbGl6ZSB0aGUgZGF0YWJhc2UgaWYgbmVlZGVkCmlmIFsgISAtZCAiL3Zhci9saWIvbXlzcWwvdndhIiBdOyB0aGVuCiAgICBlY2hvICJJbml0aWFsaXppbmcgZGF0YWJhc2UuLi4iCiAgICBteXNxbF9pbnN0YWxsX2RiIC0tdXNlcj1teXNxbCAtLWxkYXRhPS92YXIvbGliL215c3FsLwogICAgbXlzcWxkX3NhZmUgJgogICAgc2xlZXAgNQogICAgbXlzcWwgLXVyb290IC1lICJDUkVBVEUgVVNFUiAnYXBwJ0AnbG9jYWxob3N0JyBJREVOVElGSUVEIEJZICd2dWxuZXJhYmxlcyc7IENSRUFURSBEQVRBQkFTRSB2d2E7IEdSQU5UIEFMTCBQUklWSUxFR0VTIE9OIHZ3YS4qIFRPICdhcHAnQCdsb2NhbGhvc3QnOyIKICAgIG15c3FsIC11cm9vdCAtcHZ1bG5lcmFibGVzIHZ3YSA8IC9kb2NrZXItZW50cnlwb2ludC1pbml0ZGIuZC9kYi5zcWwKICAgIG15c3FsYWRtaW4gLXVyb290IHNodXRkb3duCmZpCiMgUmVzdGFydCBNeVNRTCB0byBlbnN1cmUgaXQncyBydW5uaW5nIHdpdGggbmV0d29ya2luZwplY2hvICdbK10gUmVzdGFydGluZyBteXNxbC4uLicKbXlzcWxkX3NhZmUgJgpzbGVlcCA1CiMgU3RhcnQgQXBhY2hlCmVjaG8gJ1srXSBTdGFydGluZyBhcGFjaGUnCnNlcnZpY2UgYXBhY2hlMiBzdGFydAojIEtlZXAgY29udGFpbmVyIHJ1bm5pbmcKdGFpbCAtZiAvdmFyL2xvZy9hcGFjaGUyLyogL3Zhci9sb2cvbXlzcWwvKiAmCndhaXQK" | base64 -d > /main.sh
 
 # Set script permissions
 RUN chmod +x /main.sh
-
-# Set user flag
-RUN echo "5258686c62474666526d78685a3374454d474e725a584a6656584e6c636c39776432356c5a48303d" > /root/userflag.txt
-
+# Expose port 80
+EXPOSE 80
 # Set entrypoint
 ENTRYPOINT ["/main.sh"]

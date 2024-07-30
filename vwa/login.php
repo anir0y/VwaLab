@@ -163,7 +163,7 @@ body{
 <div class="body"></div>
 		<div class="grad"></div>
 		<div class="header">
-			<div>Arishti<span>Lab</span></div>
+			<div>Login<span>Panel</span></div>
 		</div>
 		<br>
 		<div class="login">
